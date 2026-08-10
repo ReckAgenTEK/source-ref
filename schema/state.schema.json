@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://source-ref.dev/schema/state.schema.json",
+  "title": "source-ref generated state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "repositories"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "repositories": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/repositoryState"
+      }
+    }
+  },
+  "$defs": {
+    "repositoryState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "identity",
+        "repositoryHome",
+        "checkoutPath",
+        "lastOperationAt"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repositoryHome": {
+          "type": "string",
+          "minLength": 1
+        },
+        "checkoutPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lastFetchAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastOperationAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

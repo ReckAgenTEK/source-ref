@@ -1,0 +1,17 @@
+{
+  "name": "@source-ref/source-ref",
+  "version": "0.0.0",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/mod.ts",
+    "./cli": "./src/cli.ts"
+  },
+  "publish": {
+    "include": [
+      "src",
+      "schema",
+      "README.md",
+      "LICENSE"
+    ]
+  }
+}

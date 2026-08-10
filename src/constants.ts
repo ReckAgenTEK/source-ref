@@ -1,0 +1,6 @@
+export const SOURCE_REF_VERSION = "0.0.0";
+export const SOURCE_REF_SCHEMA_VERSION = 1 as const;
+export const LOCKFILE_SCHEMA_VERSION = SOURCE_REF_SCHEMA_VERSION;
+export const STATE_SCHEMA_VERSION = SOURCE_REF_SCHEMA_VERSION;
+export const CLI_JSON_SCHEMA_VERSION = 1 as const;
+export const MINIMUM_GIT_VERSION = "2.20.0";
