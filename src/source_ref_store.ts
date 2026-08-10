@@ -46,10 +46,12 @@ import type {
   ManagedRepository,
   PathOptions,
   PullOptions,
+  RemoteHead,
   RemoteRef,
   RepositoryId,
   RepositorySelector,
   RepositoryStatus,
+  ResolveRemoteHeadRequest,
   RevisionDescription,
   SourceRefStoreOptions,
   StatusOptions,
@@ -156,6 +158,12 @@ export class SourceRefStore {
     const parsed = parseRepositoryUrl(request.url, this.#layout.projectRoot);
     await this.#git.assertSupportedVersion(request.signal);
     return await this.#git.listRemoteRefs(parsed.url, request.kind, request.signal);
+  }
+
+  async resolveRemoteHead(request: ResolveRemoteHeadRequest): Promise<RemoteHead> {
+    const parsed = parseRepositoryUrl(request.url, this.#layout.projectRoot);
+    await this.#git.assertSupportedVersion(request.signal);
+    return await this.#git.resolveRemoteHead(parsed.url, request.signal);
   }
 
   async describeRevision(

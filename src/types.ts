@@ -19,6 +19,11 @@ export interface RemoteRef {
   readonly commit: string;
 }
 
+export interface RemoteHead {
+  readonly branch: string;
+  readonly commit: string;
+}
+
 export interface SourceRefStoreOptions {
   /** Base directory for relative root and lock-file paths. Defaults to Deno.cwd(). */
   readonly projectRoot?: string;
@@ -39,6 +44,11 @@ export interface EnsureRequest {
 export interface ListRemoteRefsRequest {
   readonly url: string;
   readonly kind?: RemoteRefKind;
+  readonly signal?: AbortSignal;
+}
+
+export interface ResolveRemoteHeadRequest {
+  readonly url: string;
   readonly signal?: AbortSignal;
 }
 

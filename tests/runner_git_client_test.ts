@@ -85,6 +85,102 @@ Deno.test("Git client normalizes branches and peels annotated tags", async () =>
   assertEquals(runner.requests[0].env?.GIT_TERMINAL_PROMPT, "0");
 });
 
+Deno.test("Git client strictly resolves 40- and 64-hex symbolic remote HEADs", async () => {
+  for (const rawCommit of ["A".repeat(40), "B".repeat(64)]) {
+    const runner = new FakeRunner([{
+      stdout: `ref: refs/heads/feature/topic\tHEAD\n${rawCommit}\tHEAD\n`,
+    }]);
+    const head = await new GitClient(runner).resolveRemoteHead(
+      "https://example.invalid/repo.git",
+    );
+    assertEquals(head, { branch: "feature/topic", commit: rawCommit.toLowerCase() });
+    assertEquals(runner.requests[0].executable, "git");
+    assertEquals(runner.requests[0].args, [
+      "ls-remote",
+      "--symref",
+      "--",
+      "https://example.invalid/repo.git",
+      "HEAD",
+    ]);
+  }
+});
+
+Deno.test("Git client rejects malformed symbolic remote HEAD output", async () => {
+  const commit = "1".repeat(40);
+  const outputs = [
+    `ref: refs/heads/main HEAD\n${commit}\tHEAD\n`,
+    `ref: refs/tags/v1\tHEAD\n${commit}\tHEAD\n`,
+    `ref: refs/heads/main\tHEAD\n${commit}\tHEAD\nunexpected\n`,
+    `ref: refs/heads/main\tHEAD\nref: refs/heads/other\tHEAD\n${commit}\tHEAD\n`,
+  ];
+  for (const stdout of outputs) {
+    const error = await assertRejects(
+      () => new GitClient(new FakeRunner([{ stdout }])).resolveRemoteHead("remote.git"),
+      GitCommandError,
+    );
+    assertEquals(error.code, "GIT_COMMAND_FAILED");
+    assertEquals(error.exitCode, 0);
+  }
+});
+
+Deno.test("Git client rejects invalid symbolic remote HEAD branch names", async () => {
+  const commit = "1".repeat(40);
+  for (
+    const branch of [
+      "bad branch",
+      "bad..branch",
+      "bad~branch",
+      "bad/",
+      ".hidden/main",
+      "topic.lock",
+      "HEAD",
+    ]
+  ) {
+    const error = await assertRejects(
+      () =>
+        new GitClient(
+          new FakeRunner([{
+            stdout: `ref: refs/heads/${branch}\tHEAD\n${commit}\tHEAD\n`,
+          }]),
+        ).resolveRemoteHead("remote.git"),
+      GitCommandError,
+    );
+    assertEquals(error.details.reason, "invalid symbolic branch name");
+  }
+});
+
+Deno.test("Git client rejects a remote HEAD without a symbolic branch", async () => {
+  const runner = new FakeRunner([{ stdout: `${"1".repeat(40)}\tHEAD\n` }]);
+  const error = await assertRejects(
+    () => new GitClient(runner).resolveRemoteHead("remote.git"),
+    GitCommandError,
+  );
+  assertEquals(error.details.reason, "missing symbolic HEAD mapping");
+});
+
+Deno.test("Git client rejects an invalid remote HEAD commit", async () => {
+  for (const commit of ["1".repeat(39), "g".repeat(40), "1".repeat(65)]) {
+    const runner = new FakeRunner([{
+      stdout: `ref: refs/heads/main\tHEAD\n${commit}\tHEAD\n`,
+    }]);
+    await assertRejects(
+      () => new GitClient(runner).resolveRemoteHead("remote.git"),
+      GitCommandError,
+    );
+  }
+});
+
+Deno.test("Git client maps remote HEAD cancellation to a public abort error", async () => {
+  const runner = new FakeRunner([new CommandRunnerAbortError()]);
+  const controller = new AbortController();
+  const error = await assertRejects(
+    () => new GitClient(runner).resolveRemoteHead("remote.git", controller.signal),
+    OperationAbortedError,
+  );
+  assertEquals(error.details.operation, "remote HEAD resolution");
+  assertEquals(runner.requests[0].signal, controller.signal);
+});
+
 Deno.test("Git client returns structured revision descriptions without a shell", async () => {
   const commit = "9df02121d0d87c17173f79d55692bed9cb65722c";
   const runner = new FakeRunner([{ stdout: "0.16.0-135-g9df02121d\n" }]);

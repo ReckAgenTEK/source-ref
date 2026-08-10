@@ -31,10 +31,14 @@ export function redactUrl(value: string): string {
     if (parsed.hash) parsed.hash = "#redacted";
     return parsed.toString();
   } catch {
-    return value.replace(
-      /^([^@/:\s]+):([^@\s]+)@/,
-      "redacted:redacted@",
-    );
+    return value
+      .replace(
+        /^(\s*[A-Za-z][A-Za-z0-9+.-]*:\/\/)[^/@\s]*@/,
+        "$1redacted@",
+      )
+      .replace(/^([^@/:\s]+):([^@\s]+)@/, "redacted:redacted@")
+      .replace(/([?&][^#&=\s]*=)[^&#\s]*/g, "$1redacted")
+      .replace(/#.*$/, "#redacted");
   }
 }
 

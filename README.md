@@ -30,6 +30,10 @@ const tags = await store.listRemoteRefs({
   kind: "tag",
 });
 
+const remoteHead = await store.resolveRemoteHead({
+  url: "https://codeberg.org/ziglang/zig.git",
+});
+
 const revision = await store.describeRevision({ provider: "codeberg", name: "zig" }, {
   tagPattern: "*.*.*",
   abbreviationLength: 9,
@@ -44,6 +48,7 @@ Public methods:
 
 - `ensure(request): Promise<CheckoutResult>`
 - `listRemoteRefs({ url, kind?, signal? }): Promise<RemoteRef[]>`
+- `resolveRemoteHead({ url, signal? }): Promise<RemoteHead>`
 - `describeRevision(id, options?): Promise<RevisionDescription>`
 - `fetch(id, { ref?, signal? }): Promise<FetchResult>`
 - `sync(id?, { signal? }): Promise<CheckoutResult[]>`
@@ -56,11 +61,11 @@ Public methods:
 - `doctor(signal?): Promise<DoctorResult>`
 
 An ID argument can be `{ provider, name }` or a `"provider/name"` string. Remote refs are normalized
-to `{ kind, name, commit }`; annotated tags contain the peeled commit. Result paths are absolute.
-`CheckoutResult` also reports `cloned`, `fetched`, and `checkoutChanged` so callers can describe
-performed work without accessing Git output. `RevisionDescription` exposes the locked commit's
-nearest matching tag, commit distance, and unambiguous abbreviated commit without exposing raw Git
-output.
+to `{ kind, name, commit }`; annotated tags contain the peeled commit. Remote HEAD resolves to
+`{ branch, commit }`. Result paths are absolute. `CheckoutResult` also reports `cloned`, `fetched`,
+and `checkoutChanged` so callers can describe performed work without accessing Git output.
+`RevisionDescription` exposes the locked commit's nearest matching tag, commit distance, and
+unambiguous abbreviated commit without exposing raw Git output.
 
 Only domain types, constants, `SourceRefStore`, and typed public errors are exported from the
 package root. Git command output, process execution, and filesystem-layout internals are private.

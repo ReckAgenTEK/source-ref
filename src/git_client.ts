@@ -14,7 +14,7 @@ import {
   DenoCommandRunner,
 } from "./command_runner.ts";
 import { redactUrl } from "./repository_url.ts";
-import type { GitRef, RemoteRef, RemoteRefKind, RevisionDescription } from "./types.ts";
+import type { GitRef, RemoteHead, RemoteRef, RemoteRefKind, RevisionDescription } from "./types.ts";
 
 const PARSE_OUTPUT_LIMIT = 16 * 1024 * 1024;
 const COMMIT_PATTERN = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i;
@@ -111,6 +111,16 @@ export class GitClient {
     );
     if (result.stdoutTruncated) throw new GitOutputTruncatedError("remote ref listing");
     return parseRemoteRefs(result.stdout, kind);
+  }
+
+  async resolveRemoteHead(url: string, signal?: AbortSignal): Promise<RemoteHead> {
+    const result = await this.#runChecked(
+      ["ls-remote", "--symref", "--", url, "HEAD"],
+      undefined,
+      { signal, maxOutputBytes: PARSE_OUTPUT_LIMIT, operation: "remote HEAD resolution" },
+    );
+    if (result.stdoutTruncated) throw new GitOutputTruncatedError("remote HEAD resolution");
+    return parseRemoteHead(result.stdout);
   }
 
   async describeRevision(
@@ -468,6 +478,60 @@ function parseRemoteRefs(output: string, kind?: RemoteRefKind): RemoteRef[] {
   return entries.sort((left, right) =>
     left.kind.localeCompare(right.kind) || left.name.localeCompare(right.name)
   );
+}
+
+function parseRemoteHead(output: string): RemoteHead {
+  const lines = output.split(/\r?\n/);
+  if (lines.at(-1) === "") lines.pop();
+
+  let branch: string | null = null;
+  let commit: string | null = null;
+  for (const line of lines) {
+    const symbolic = /^ref: refs\/heads\/([^\0\t\r\n]+)\tHEAD$/.exec(line);
+    if (symbolic) {
+      if (branch !== null) throw invalidRemoteHead("multiple symbolic HEAD mappings");
+      branch = symbolic[1];
+      continue;
+    }
+
+    const direct = /^([0-9a-f]{40}|[0-9a-f]{64})\tHEAD$/i.exec(line);
+    if (direct) {
+      if (commit !== null) throw invalidRemoteHead("multiple HEAD commits");
+      commit = direct[1].toLowerCase();
+      continue;
+    }
+
+    throw invalidRemoteHead("unrecognized output");
+  }
+
+  if (branch === null) throw invalidRemoteHead("missing symbolic HEAD mapping");
+  if (commit === null) throw invalidRemoteHead("missing HEAD commit");
+  if (!isValidBranchName(branch)) throw invalidRemoteHead("invalid symbolic branch name");
+  return { branch, commit };
+}
+
+function isValidBranchName(value: string): boolean {
+  if (
+    value.length === 0 || value.length > 1024 || value === "@" || value === "HEAD" ||
+    value.startsWith("-") || value.startsWith("/") || value.endsWith("/") ||
+    value.endsWith(".") || value.includes("..") || value.includes("//") ||
+    value.includes("@{") || /[~^:?*\\[]/.test(value) ||
+    [...value].some((character) => {
+      const code = character.codePointAt(0)!;
+      return code <= 0x20 || code === 0x7f;
+    })
+  ) return false;
+  return value.split("/").every((component) =>
+    component.length > 0 && !component.startsWith(".") && !component.endsWith(".lock")
+  );
+}
+
+function invalidRemoteHead(reason: string): GitCommandError {
+  return new GitCommandError(`Git returned an invalid symbolic remote HEAD: ${reason}`, {
+    exitCode: 0,
+    operation: "remote HEAD resolution",
+    reason,
+  });
 }
 
 function parseCommit(output: string, operation: string): string {

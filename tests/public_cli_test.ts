@@ -6,6 +6,7 @@ import { cleanup } from "./test_helpers.ts";
 
 Deno.test("public module exposes domain API but not Git internals", () => {
   assertEquals(typeof publicApi.SourceRefStore, "function");
+  assertEquals(typeof publicApi.SourceRefStore.prototype.resolveRemoteHead, "function");
   assertEquals(publicApi.SOURCE_REF_SCHEMA_VERSION, 1);
   assertEquals(publicApi.MINIMUM_GIT_VERSION, "2.20.0");
   const keys = Object.keys(publicApi);
