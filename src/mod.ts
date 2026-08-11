@@ -3,7 +3,7 @@
  *
  * @example Manage a branch as an immutable local checkout.
  * ```ts
- * import { SourceRefStore } from "@mannsion/source-ref";
+ * import { SourceRefStore } from "@zignado/source-ref";
  *
  * const store = new SourceRefStore({ projectRoot: Deno.cwd() });
  * await store.ensure({

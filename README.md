@@ -1,4 +1,4 @@
-# @mannsion/source-ref
+# @zignado/source-ref
 
 `source-ref` is a Deno 2 library and CLI for deterministic, project-local Git checkouts. It invokes
 the installed `git` executable directly through `Deno.Command`; it never invokes a shell and has no
@@ -12,7 +12,7 @@ agents. Credential-bearing URLs are rejected.
 Add the library to a Deno project:
 
 ```bash
-deno add jsr:@mannsion/source-ref@0.1.0-beta.1
+deno add jsr:@zignado/source-ref@0.1.0-beta.1
 ```
 
 Install the CLI globally:
@@ -20,13 +20,13 @@ Install the CLI globally:
 ```bash
 deno install --global --name source-ref \
   --allow-read --allow-write --allow-run=git \
-  jsr:@mannsion/source-ref@0.1.0-beta.1/cli
+  jsr:@zignado/source-ref@0.1.0-beta.1/cli
 ```
 
 ## Library API
 
 ```ts
-import { SourceRefStore } from "@mannsion/source-ref";
+import { SourceRefStore } from "@zignado/source-ref";
 
 const store = new SourceRefStore({
   projectRoot: Deno.cwd(),
@@ -108,7 +108,7 @@ package root. Git command output, process execution, and filesystem-layout inter
 ## CLI
 
 ```text
-deno run --allow-read --allow-write --allow-run=git jsr:@mannsion/source-ref@0.1.0-beta.1/cli ensure https://github.com/zignado/source-ref.git --name source-ref --ref main --ref-kind branch --mode pinned
+deno run --allow-read --allow-write --allow-run=git jsr:@zignado/source-ref@0.1.0-beta.1/cli ensure https://github.com/zignado/source-ref.git --name source-ref --ref main --ref-kind branch --mode pinned
 source-ref fetch <provider/name>
 source-ref sync [provider/name]
 source-ref update <provider/name> [--ref <ref> --ref-kind <kind>]
@@ -131,3 +131,7 @@ deno publish --dry-run --allow-dirty
 ```
 
 Tests are network-independent and use temporary local Git repositories.
+
+Publishing runs from [`.github/workflows/publish.yml`](./.github/workflows/publish.yml) when a
+`v<version>` tag matching `deno.json` is pushed. JSR authenticates the linked GitHub repository with
+OIDC, so no registry token is stored in GitHub.
