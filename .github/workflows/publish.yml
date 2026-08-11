@@ -27,7 +27,7 @@ jobs:
 
       - name: Verify release tag
         run: |
-          deno eval --allow-env --allow-read '
+          deno eval '
             const { version } = JSON.parse(await Deno.readTextFile("deno.json"));
             const tag = Deno.env.get("GITHUB_REF_NAME");
             if (tag !== `v${version}`) {
