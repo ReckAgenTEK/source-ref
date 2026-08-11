@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,13 +26,17 @@ jobs:
         with:
           deno-version: v2.9.5
 
-      - name: Verify release tag
+      - name: Verify release ref
         run: |
           deno eval '
             const { version } = JSON.parse(await Deno.readTextFile("deno.json"));
-            const tag = Deno.env.get("GITHUB_REF_NAME");
-            if (tag !== `v${version}`) {
-              throw new Error(`Tag ${tag} does not match package version ${version}`);
+            const event = Deno.env.get("GITHUB_EVENT_NAME");
+            const ref = Deno.env.get("GITHUB_REF_NAME");
+            if (event === "push" && ref !== `v${version}`) {
+              throw new Error(`Tag ${ref} does not match package version ${version}`);
+            }
+            if (event === "workflow_dispatch" && ref !== "main") {
+              throw new Error(`Manual publishing must run from main, got ${ref}`);
             }
           '
 
