@@ -70,28 +70,34 @@ interface MutationResult {
   readonly resolvedCommit: string;
 }
 
+/** Manages reproducible Git checkouts and their project-local lock and state files. */
 export class SourceRefStore {
   readonly #layout: StoreLayout;
   readonly #git: GitClient;
 
+  /** Creates a store rooted at the current working directory unless configured otherwise. */
   constructor(options?: SourceRefStoreOptions);
   constructor(options: SourceRefStoreOptions = {}, gitClient = new GitClient()) {
     this.#layout = createStoreLayout(options);
     this.#git = gitClient;
   }
 
+  /** Absolute base directory for relative store paths. */
   get projectRoot(): string {
     return this.#layout.projectRoot;
   }
 
+  /** Absolute path to generated source-ref state. */
   get root(): string {
     return this.#layout.root;
   }
 
+  /** Absolute path to the reproducible lock file. */
   get lockFile(): string {
     return this.#layout.lockFile;
   }
 
+  /** Creates a checkout or reproduces its existing locked commit without advancing the request. */
   async ensure(request: EnsureRequest): Promise<CheckoutResult> {
     const parsed = this.#parseRequestUrl(request.id, request.url);
     this.#assertModeRef(request.mode, request.ref, request.id);
@@ -154,18 +160,21 @@ export class SourceRefStore {
     }, request.signal);
   }
 
+  /** Lists normalized branches, tags, and their commits without creating a checkout. */
   async listRemoteRefs(request: ListRemoteRefsRequest): Promise<RemoteRef[]> {
     const parsed = parseRepositoryUrl(request.url, this.#layout.projectRoot);
     await this.#git.assertSupportedVersion(request.signal);
     return await this.#git.listRemoteRefs(parsed.url, request.kind, request.signal);
   }
 
+  /** Resolves a remote repository's symbolic HEAD branch and commit. */
   async resolveRemoteHead(request: ResolveRemoteHeadRequest): Promise<RemoteHead> {
     const parsed = parseRepositoryUrl(request.url, this.#layout.projectRoot);
     await this.#git.assertSupportedVersion(request.signal);
     return await this.#git.resolveRemoteHead(parsed.url, request.signal);
   }
 
+  /** Describes a locked revision by its nearest matching tag, distance, and abbreviated commit. */
   async describeRevision(
     selector: RepositorySelector,
     options: DescribeRevisionOptions = {},
@@ -195,6 +204,7 @@ export class SourceRefStore {
     );
   }
 
+  /** Fetches a ref into a managed checkout without changing its checked-out commit or lock. */
   async fetch(selector: RepositorySelector, options: FetchOptions = {}): Promise<FetchResult> {
     const id = parseRepositorySelector(selector);
     await this.#git.assertSupportedVersion(options.signal);
@@ -216,6 +226,7 @@ export class SourceRefStore {
     }, options.signal);
   }
 
+  /** Reproduces one or all locked checkouts without resolving moving refs again. */
   async sync(
     selector?: RepositorySelector,
     options: SyncOptions = {},
@@ -252,6 +263,7 @@ export class SourceRefStore {
     return results;
   }
 
+  /** Resolves a repository's requested ref again and atomically advances its lock. */
   async update(selector: RepositorySelector, options: UpdateOptions = {}): Promise<CheckoutResult> {
     const id = parseRepositorySelector(selector);
     await this.#git.assertSupportedVersion(options.signal);
@@ -286,6 +298,7 @@ export class SourceRefStore {
     }, options.signal);
   }
 
+  /** Selects an explicit ref and mode, then atomically replaces the repository lock entry. */
   async checkout(
     selector: RepositorySelector,
     ref: GitRef,
@@ -319,6 +332,7 @@ export class SourceRefStore {
     }, options.signal);
   }
 
+  /** Fast-forwards an upstream-tracking branch and its lock; rejects pinned repositories. */
   async pull(selector: RepositorySelector, options: PullOptions = {}): Promise<CheckoutResult> {
     const id = parseRepositorySelector(selector);
     await this.#git.assertSupportedVersion(options.signal);
@@ -387,12 +401,14 @@ export class SourceRefStore {
     }, options.signal);
   }
 
+  /** Returns a deterministic path without requiring the repository to exist. */
   path(selector: RepositorySelector, options: PathOptions = {}): string {
     const id = parseRepositorySelector(selector);
     const paths = createRepositoryLayout(this.#layout, id);
     return options.repositoryRoot ? paths.repositoryHome : paths.checkoutPath;
   }
 
+  /** Lists repositories represented by the current lock and generated state. */
   async list(): Promise<ManagedRepository[]> {
     const [lock, state] = await Promise.all([
       this.#readLock(),
@@ -420,6 +436,7 @@ export class SourceRefStore {
       );
   }
 
+  /** Inspects one or all managed repositories without changing them. */
   async status(
     selector?: RepositorySelector,
     options: StatusOptions = {},
@@ -489,6 +506,7 @@ export class SourceRefStore {
     return statuses;
   }
 
+  /** Reports Git availability and the configured store paths. */
   async doctor(signal?: AbortSignal): Promise<DoctorResult> {
     let version: string | null = null;
     let available = false;

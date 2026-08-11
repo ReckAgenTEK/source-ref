@@ -1,3 +1,22 @@
+/**
+ * Deterministic, project-local Git checkouts backed by the installed Git executable.
+ *
+ * @example Manage a branch as an immutable local checkout.
+ * ```ts
+ * import { SourceRefStore } from "@mannsion/source-ref";
+ *
+ * const store = new SourceRefStore({ projectRoot: Deno.cwd() });
+ * await store.ensure({
+ *   id: { provider: "github", name: "source-ref" },
+ *   url: "https://github.com/zignado/source-ref.git",
+ *   mode: "pinned",
+ *   ref: { kind: "branch", value: "main" },
+ * });
+ * ```
+ *
+ * @module
+ */
+
 export {
   CLI_JSON_SCHEMA_VERSION,
   LOCKFILE_SCHEMA_VERSION,

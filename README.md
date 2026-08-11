@@ -1,4 +1,4 @@
-# source-ref
+# @mannsion/source-ref
 
 `source-ref` is a Deno 2 library and CLI for deterministic, project-local Git checkouts. It invokes
 the installed `git` executable directly through `Deno.Command`; it never invokes a shell and has no
@@ -7,10 +7,26 @@ Node runtime path.
 Git `2.20.0` or newer is required. Authentication is delegated to Git credential helpers and SSH
 agents. Credential-bearing URLs are rejected.
 
+## Install
+
+Add the library to a Deno project:
+
+```bash
+deno add jsr:@mannsion/source-ref@0.1.0-beta.1
+```
+
+Install the CLI globally:
+
+```bash
+deno install --global --name source-ref \
+  --allow-read --allow-write --allow-run=git \
+  jsr:@mannsion/source-ref@0.1.0-beta.1/cli
+```
+
 ## Library API
 
 ```ts
-import { SourceRefStore } from "@source-ref/source-ref";
+import { SourceRefStore } from "@mannsion/source-ref";
 
 const store = new SourceRefStore({
   projectRoot: Deno.cwd(),
@@ -18,24 +34,28 @@ const store = new SourceRefStore({
   lockFile: "source-ref.lock.json",
 });
 
+const repository = {
+  id: { provider: "github", name: "source-ref" },
+  url: "https://github.com/zignado/source-ref.git",
+};
+
 const checkout = await store.ensure({
-  id: { provider: "codeberg", name: "zig" },
-  url: "https://codeberg.org/ziglang/zig.git",
+  ...repository,
   mode: "pinned",
-  ref: { kind: "tag", value: "0.16.0" },
+  ref: { kind: "branch", value: "main" },
 });
 
 const tags = await store.listRemoteRefs({
-  url: "https://codeberg.org/ziglang/zig.git",
+  url: repository.url,
   kind: "tag",
 });
 
 const remoteHead = await store.resolveRemoteHead({
-  url: "https://codeberg.org/ziglang/zig.git",
+  url: repository.url,
 });
 
-const revision = await store.describeRevision({ provider: "codeberg", name: "zig" }, {
-  tagPattern: "*.*.*",
+const revision = await store.describeRevision(repository.id, {
+  tagPattern: "v*",
   abbreviationLength: 9,
 });
 ```
@@ -88,7 +108,7 @@ package root. Git command output, process execution, and filesystem-layout inter
 ## CLI
 
 ```text
-deno run --allow-env --allow-read --allow-write --allow-run=git jsr:@source-ref/source-ref/cli ensure <url> --name zig --ref 0.16.0 --ref-kind tag
+deno run --allow-read --allow-write --allow-run=git jsr:@mannsion/source-ref@0.1.0-beta.1/cli ensure https://github.com/zignado/source-ref.git --name source-ref --ref main --ref-kind branch --mode pinned
 source-ref fetch <provider/name>
 source-ref sync [provider/name]
 source-ref update <provider/name> [--ref <ref> --ref-kind <kind>]
@@ -102,3 +122,12 @@ source-ref doctor [--json]
 
 `path` writes only its path value to stdout. Mutation progress is written to stderr. `--json`
 success and error documents use `schemaVersion: 1` and stable typed error codes.
+
+## Development
+
+```text
+deno task check
+deno publish --dry-run --allow-dirty
+```
+
+Tests are network-independent and use temporary local Git repositories.

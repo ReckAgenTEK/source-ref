@@ -1,3 +1,9 @@
+/**
+ * Command-line interface for deterministic source checkouts.
+ *
+ * @module
+ */
+
 import { CLI_JSON_SCHEMA_VERSION } from "./constants.ts";
 import {
   GitCommandError,
@@ -47,6 +53,7 @@ const defaultIo: CliIo = {
   stderr: (text) => writeStream(Deno.stderr, text),
 };
 
+/** Runs the source-ref CLI and returns its process exit code. */
 export async function runCli(
   args: readonly string[] = Deno.args,
   io: CliIo = defaultIo,

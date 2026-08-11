@@ -1,5 +1,6 @@
 import { assertEquals, assertStringIncludes } from "@std/assert";
 import { join } from "@std/path";
+import packageMetadata from "../deno.json" with { type: "json" };
 import * as publicApi from "../src/mod.ts";
 import { runCli } from "../src/cli.ts";
 import { cleanup } from "./test_helpers.ts";
@@ -13,6 +14,11 @@ Deno.test("public module exposes domain API but not Git internals", () => {
   assertEquals(keys.includes("GitClient"), false);
   assertEquals(keys.includes("DenoCommandRunner"), false);
   assertEquals(keys.includes("parseRepositoryUrl"), false);
+});
+
+Deno.test("public package metadata matches runtime constants", () => {
+  assertEquals(packageMetadata.name, "@mannsion/source-ref");
+  assertEquals(publicApi.SOURCE_REF_VERSION, packageMetadata.version);
 });
 
 Deno.test("CLI path stdout is composable and JSON errors are stable", async () => {
