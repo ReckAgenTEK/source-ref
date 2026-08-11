@@ -10,6 +10,18 @@
     "@std/assert": "jsr:@std/assert@1.0.17",
     "@std/path": "jsr:@std/path@1.1.4"
   },
+  "fmt": {
+    "lineWidth": 100,
+    "semiColons": true,
+    "singleQuote": false
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "recommended"
+      ]
+    }
+  },
   "tasks": {
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
