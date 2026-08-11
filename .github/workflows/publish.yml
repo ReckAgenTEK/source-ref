@@ -25,6 +25,9 @@ jobs:
         with:
           deno-version: v2.9.5
 
+      - name: Check package
+        run: deno task --frozen-lockfile check
+
       - name: Verify release tag
         run: |
           deno eval '
@@ -35,8 +38,10 @@ jobs:
             }
           '
 
-      - name: Check package
-        run: deno task --frozen-lockfile check
+      - name: Verify clean checkout
+        run: |
+          git status --short
+          test -z "$(git status --porcelain)"
 
       - name: Publish package
         run: deno publish
