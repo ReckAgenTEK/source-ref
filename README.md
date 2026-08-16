@@ -1,4 +1,4 @@
-# @zignado/source-ref
+# @reckagentek/source-ref
 
 `source-ref` is a Deno 2 library and CLI for deterministic, project-local Git checkouts. It invokes
 the installed `git` executable directly through `Deno.Command`; it never invokes a shell and has no
@@ -12,7 +12,7 @@ agents. Credential-bearing URLs are rejected.
 Add the library to a Deno project:
 
 ```bash
-deno add jsr:@zignado/source-ref@0.1.0-beta.1
+deno add jsr:@reckagentek/source-ref@0.1.0-beta.2
 ```
 
 Install the CLI globally:
@@ -20,13 +20,13 @@ Install the CLI globally:
 ```bash
 deno install --global --name source-ref \
   --allow-read --allow-write --allow-run=git \
-  jsr:@zignado/source-ref@0.1.0-beta.1/cli
+  jsr:@reckagentek/source-ref@0.1.0-beta.2/cli
 ```
 
 ## Library API
 
 ```ts
-import { SourceRefStore } from "@zignado/source-ref";
+import { SourceRefStore } from "@reckagentek/source-ref";
 
 const store = new SourceRefStore({
   projectRoot: Deno.cwd(),
@@ -36,7 +36,7 @@ const store = new SourceRefStore({
 
 const repository = {
   id: { provider: "github", name: "source-ref" },
-  url: "https://github.com/zignado/source-ref.git",
+  url: "https://github.com/ReckAgenTEK/source-ref.git",
 };
 
 const checkout = await store.ensure({
@@ -108,7 +108,7 @@ package root. Git command output, process execution, and filesystem-layout inter
 ## CLI
 
 ```text
-deno run --allow-read --allow-write --allow-run=git jsr:@zignado/source-ref@0.1.0-beta.1/cli ensure https://github.com/zignado/source-ref.git --name source-ref --ref main --ref-kind branch --mode pinned
+deno run --allow-read --allow-write --allow-run=git jsr:@reckagentek/source-ref@0.1.0-beta.2/cli ensure https://github.com/ReckAgenTEK/source-ref.git --name source-ref --ref main --ref-kind branch --mode pinned
 source-ref fetch <provider/name>
 source-ref sync [provider/name]
 source-ref update <provider/name> [--ref <ref> --ref-kind <kind>]

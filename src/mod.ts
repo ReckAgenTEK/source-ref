@@ -3,12 +3,12 @@
  *
  * @example Manage a branch as an immutable local checkout.
  * ```ts
- * import { SourceRefStore } from "@zignado/source-ref";
+ * import { SourceRefStore } from "@reckagentek/source-ref";
  *
  * const store = new SourceRefStore({ projectRoot: Deno.cwd() });
  * await store.ensure({
  *   id: { provider: "github", name: "source-ref" },
- *   url: "https://github.com/zignado/source-ref.git",
+ *   url: "https://github.com/ReckAgenTEK/source-ref.git",
  *   mode: "pinned",
  *   ref: { kind: "branch", value: "main" },
  * });

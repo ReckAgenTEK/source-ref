@@ -1,4 +1,4 @@
-export const SOURCE_REF_VERSION = "0.1.0-beta.1";
+export const SOURCE_REF_VERSION = "0.1.0-beta.2";
 export const SOURCE_REF_SCHEMA_VERSION = 1 as const;
 export const LOCKFILE_SCHEMA_VERSION = SOURCE_REF_SCHEMA_VERSION;
 export const STATE_SCHEMA_VERSION = SOURCE_REF_SCHEMA_VERSION;

@@ -17,7 +17,7 @@ Deno.test("public module exposes domain API but not Git internals", () => {
 });
 
 Deno.test("public package metadata matches runtime constants", () => {
-  assertEquals(packageMetadata.name, "@zignado/source-ref");
+  assertEquals(packageMetadata.name, "@reckagentek/source-ref");
   assertEquals(publicApi.SOURCE_REF_VERSION, packageMetadata.version);
 });
 
