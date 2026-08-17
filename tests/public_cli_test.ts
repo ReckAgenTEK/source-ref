@@ -3,7 +3,7 @@ import { join } from "@std/path";
 import packageMetadata from "../deno.json" with { type: "json" };
 import * as publicApi from "../src/mod.ts";
 import { runCli } from "../src/cli.ts";
-import { cleanup } from "./test_helpers.ts";
+import { cleanup, createGitFixture } from "./test_helpers.ts";
 
 Deno.test("public module exposes domain API but not Git internals", () => {
   assertEquals(typeof publicApi.SourceRefStore, "function");
@@ -69,4 +69,46 @@ Deno.test("CLI doctor reports real Git as versioned JSON", async () => {
   assertEquals(document.command, "doctor");
   assertEquals(document.result.git.available, true);
   assertStringIncludes(document.result.git.version, ".");
+});
+
+Deno.test("CLI streams Git clone progress to stderr", async () => {
+  const fixture = await createGitFixture();
+  const project = await Deno.makeTempDir({ prefix: "source-ref-cli-progress-" });
+  try {
+    let stdout = "";
+    let stderr = "";
+    const code = await runCli(
+      [
+        "ensure",
+        fixture.remote,
+        "--name",
+        "fixture",
+        "--ref",
+        "main",
+        "--ref-kind",
+        "branch",
+        "--mode",
+        "pinned",
+        "--project-root",
+        project,
+      ],
+      {
+        stdout: (text) => {
+          stdout += text;
+          return Promise.resolve();
+        },
+        stderr: (text) => {
+          stderr += text;
+          return Promise.resolve();
+        },
+      },
+    );
+    assertEquals(code, 0);
+    assertStringIncludes(stderr, "Ensuring local/fixture");
+    assertStringIncludes(stderr, "Cloning into");
+    assertStringIncludes(stdout, " @ ");
+  } finally {
+    await cleanup(project);
+    await cleanup(fixture.root);
+  }
 });

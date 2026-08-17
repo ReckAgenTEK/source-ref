@@ -7,8 +7,8 @@ export interface CommandRequest {
   readonly env?: Readonly<Record<string, string>>;
   readonly signal?: AbortSignal;
   readonly maxOutputBytes?: number;
-  readonly onStdout?: (chunk: Uint8Array) => void;
-  readonly onStderr?: (chunk: Uint8Array) => void;
+  readonly onStdout?: (chunk: Uint8Array) => void | Promise<void>;
+  readonly onStderr?: (chunk: Uint8Array) => void | Promise<void>;
 }
 
 export interface CommandResult {
@@ -93,7 +93,7 @@ export class DenoCommandRunner implements CommandRunner {
 async function consume(
   stream: ReadableStream<Uint8Array>,
   limit: number,
-  callback?: (chunk: Uint8Array) => void,
+  callback?: (chunk: Uint8Array) => void | Promise<void>,
 ): Promise<{ text: string; truncated: boolean }> {
   const chunks: Uint8Array[] = [];
   let retained = 0;
@@ -103,7 +103,7 @@ async function consume(
   for await (const chunk of stream) {
     if (callback && callbackError === undefined) {
       try {
-        callback(chunk);
+        await callback(chunk);
       } catch (cause) {
         callbackError = cause;
       }

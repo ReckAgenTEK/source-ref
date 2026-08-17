@@ -28,11 +28,15 @@ class FakeRunner implements CommandRunner {
     );
   }
 
-  run(request: CommandRequest): Promise<CommandResult> {
+  async run(request: CommandRequest): Promise<CommandResult> {
     this.requests.push(request);
     const result = this.#results.shift();
     if (!result) throw new Error("Fake runner has no queued result");
-    return result instanceof Error ? Promise.reject(result) : Promise.resolve(result);
+    if (result instanceof Error) throw result;
+    if (result.stderr.length > 0) {
+      await request.onStderr?.(new TextEncoder().encode(result.stderr));
+    }
+    return result;
   }
 }
 
@@ -60,6 +64,36 @@ Deno.test("Deno runner rejects an already-aborted command", async () => {
       }),
     CommandRunnerAbortError,
   );
+});
+
+Deno.test("Git client streams forced network progress only when configured", async () => {
+  const silentRunner = new FakeRunner([{}]);
+  await new GitClient(silentRunner).clone("https://example.invalid/repo.git", "/tmp/repo");
+  assertEquals(silentRunner.requests[0].args, [
+    "clone",
+    "--origin",
+    "origin",
+    "--",
+    "https://example.invalid/repo.git",
+    "/tmp/repo",
+  ]);
+  assertEquals(silentRunner.requests[0].onStderr, undefined);
+
+  let progress = "";
+  const progressRunner = new FakeRunner([{ stderr: "Receiving objects: 50%\r" }]);
+  await new GitClient(progressRunner, (chunk) => {
+    progress += new TextDecoder().decode(chunk);
+  }).clone("https://example.invalid/repo.git", "/tmp/repo");
+  assertEquals(progressRunner.requests[0].args, [
+    "clone",
+    "--progress",
+    "--origin",
+    "origin",
+    "--",
+    "https://example.invalid/repo.git",
+    "/tmp/repo",
+  ]);
+  assertEquals(progress, "Receiving objects: 50%\r");
 });
 
 Deno.test("Git client normalizes branches and peels annotated tags", async () => {

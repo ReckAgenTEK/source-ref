@@ -77,9 +77,9 @@ export class SourceRefStore {
 
   /** Creates a store rooted at the current working directory unless configured otherwise. */
   constructor(options?: SourceRefStoreOptions);
-  constructor(options: SourceRefStoreOptions = {}, gitClient = new GitClient()) {
+  constructor(options: SourceRefStoreOptions = {}, gitClient?: GitClient) {
     this.#layout = createStoreLayout(options);
-    this.#git = gitClient;
+    this.#git = gitClient ?? new GitClient(undefined, progressHandler(options.onProgress));
   }
 
   /** Absolute base directory for relative store paths. */
@@ -900,6 +900,17 @@ export class SourceRefStore {
       checkoutChanged,
     };
   }
+}
+
+function progressHandler(
+  callback: SourceRefStoreOptions["onProgress"],
+): ((chunk: Uint8Array) => Promise<void>) | undefined {
+  if (callback === undefined) return undefined;
+  const decoder = new TextDecoder();
+  return async (chunk) => {
+    const text = decoder.decode(chunk, { stream: true });
+    if (text.length > 0) await callback(text);
+  };
 }
 
 function refsEqual(left: GitRef, right: GitRef): boolean {

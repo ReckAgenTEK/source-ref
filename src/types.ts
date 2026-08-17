@@ -31,6 +31,8 @@ export interface SourceRefStoreOptions {
   readonly root?: string;
   /** Tracked lock file. Defaults to source-ref.lock.json under projectRoot. */
   readonly lockFile?: string;
+  /** Optional observer for live Git network progress. The store never writes process streams. */
+  readonly onProgress?: (text: string) => void | Promise<void>;
 }
 
 export interface EnsureRequest {

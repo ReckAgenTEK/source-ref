@@ -12,7 +12,7 @@ agents. Credential-bearing URLs are rejected.
 Add the library to a Deno project:
 
 ```bash
-deno add jsr:@reckagentek/source-ref@0.1.0-beta.2
+deno add jsr:@reckagentek/source-ref@0.1.0-beta.3
 ```
 
 Install the CLI globally:
@@ -20,7 +20,7 @@ Install the CLI globally:
 ```bash
 deno install --global --name source-ref \
   --allow-read --allow-write --allow-run=git \
-  jsr:@reckagentek/source-ref@0.1.0-beta.2/cli
+  jsr:@reckagentek/source-ref@0.1.0-beta.3/cli
 ```
 
 ## Library API
@@ -108,7 +108,7 @@ package root. Git command output, process execution, and filesystem-layout inter
 ## CLI
 
 ```text
-deno run --allow-read --allow-write --allow-run=git jsr:@reckagentek/source-ref@0.1.0-beta.2/cli ensure https://github.com/ReckAgenTEK/source-ref.git --name source-ref --ref main --ref-kind branch --mode pinned
+deno run --allow-read --allow-write --allow-run=git jsr:@reckagentek/source-ref@0.1.0-beta.3/cli ensure https://github.com/ReckAgenTEK/source-ref.git --name source-ref --ref main --ref-kind branch --mode pinned
 source-ref fetch <provider/name>
 source-ref sync [provider/name]
 source-ref update <provider/name> [--ref <ref> --ref-kind <kind>]
@@ -122,6 +122,10 @@ source-ref doctor [--json]
 
 `path` writes only its path value to stdout. Mutation progress is written to stderr. `--json`
 success and error documents use `schemaVersion: 1` and stable typed error codes.
+
+CLI clone, fetch, and pull operations stream Git's live transfer progress to stderr. Library use is
+silent by default; `SourceRefStore` never writes process streams, and API callers can explicitly
+observe progress with `SourceRefStoreOptions.onProgress`.
 
 ## Development
 

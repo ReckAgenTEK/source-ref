@@ -23,13 +23,21 @@ interface GitRunOptions {
   readonly signal?: AbortSignal;
   readonly maxOutputBytes?: number;
   readonly operation?: string;
+  readonly progress?: boolean;
 }
+
+type GitProgressHandler = (chunk: Uint8Array) => void | Promise<void>;
 
 export class GitClient {
   readonly #runner: CommandRunner;
+  readonly #onProgress: GitProgressHandler | undefined;
 
-  constructor(runner: CommandRunner = new DenoCommandRunner()) {
+  constructor(
+    runner: CommandRunner = new DenoCommandRunner(),
+    onProgress?: GitProgressHandler,
+  ) {
     this.#runner = runner;
+    this.#onProgress = onProgress;
   }
 
   async version(signal?: AbortSignal): Promise<string> {
@@ -167,7 +175,7 @@ export class GitClient {
     await this.#runChecked(
       ["clone", "--origin", "origin", "--", url, destination],
       undefined,
-      { signal, operation: "clone" },
+      { signal, operation: "clone", progress: true },
     );
   }
 
@@ -241,7 +249,7 @@ export class GitClient {
     await this.#runChecked(
       ["-C", path, "fetch", "--no-tags", "--force", "--", "origin", refspec],
       undefined,
-      { signal, operation: "fetch" },
+      { signal, operation: "fetch", progress: true },
     );
   }
 
@@ -249,7 +257,7 @@ export class GitClient {
     await this.#runChecked(
       ["-C", path, "fetch", "--no-tags", "--", "origin", commit],
       undefined,
-      { signal, operation: "locked commit fetch" },
+      { signal, operation: "locked commit fetch", progress: true },
     );
   }
 
@@ -358,6 +366,7 @@ export class GitClient {
     await this.#runChecked(["-C", path, "pull", "--ff-only"], undefined, {
       signal,
       operation: "pull --ff-only",
+      progress: true,
     });
   }
 
@@ -392,13 +401,15 @@ export class GitClient {
     options: GitRunOptions = {},
   ): Promise<CommandResult> {
     try {
+      const progress = options.progress === true && this.#onProgress !== undefined;
       return await this.#runner.run({
         executable: "git",
-        args,
+        args: progress ? withProgressArgument(args) : args,
         cwd,
         env: { GIT_TERMINAL_PROMPT: "0", LC_ALL: "C" },
         signal: options.signal,
         maxOutputBytes: options.maxOutputBytes,
+        onStderr: progress ? this.#onProgress : undefined,
       });
     } catch (cause) {
       if (
@@ -428,6 +439,14 @@ export class GitClient {
       stdoutTruncated: result.stdoutTruncated,
     });
   }
+}
+
+function withProgressArgument(args: readonly string[]): readonly string[] {
+  const commandIndex = args.findIndex((argument) =>
+    argument === "clone" || argument === "fetch" || argument === "pull"
+  );
+  if (commandIndex < 0) throw new TypeError("Git progress requires clone, fetch, or pull");
+  return [...args.slice(0, commandIndex + 1), "--progress", ...args.slice(commandIndex + 1)];
 }
 
 export function compareVersions(left: string, right: string): number {

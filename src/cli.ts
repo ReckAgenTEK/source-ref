@@ -77,6 +77,7 @@ export async function runCli(
       ...(global.values["project-root"] ? { projectRoot: global.values["project-root"] } : {}),
       ...(global.values.root ? { root: global.values.root } : {}),
       ...(global.values["lock-file"] ? { lockFile: global.values["lock-file"] } : {}),
+      onProgress: io.stderr,
     };
     const store = new SourceRefStore(storeOptions);
     const json = global.booleans.has("json");
